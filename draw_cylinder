@@ -23,7 +23,7 @@ int main(int argc, char** argv)
 }
 void init(void)
 {
-	glClearColor(0.0, 0.0, 0.0, 0.0);
+	/*glClearColor(0.0, 0.0, 0.0, 0.0);
 	glClearDepth(1);
 	glShadeModel(GL_SMOOTH);
 	GLfloat _ambient[] = { 1.0,1.0,1.0,1.0 };
@@ -38,7 +38,30 @@ void init(void)
 	glEnable(GL_LIGHTING);
 	glEnable(GL_LIGHT0);
 	glEnable(GL_DEPTH_TEST);
-	glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
+	glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);*/
+	//材质反光性设置
+	GLfloat mat_specular[] = { 1.0, 1.0, 1.0, 1.0 };  //镜面反射参数
+	GLfloat mat_shininess[] = { 50.0 };               //高光指数
+	GLfloat light_position[] = { 1.0, 1.0, 1.0, 0.0 };
+	GLfloat white_light[] = { 1.0, 1.0, 1.0, 1.0 };   //灯位置(1,1,1), 最后1-开关
+	GLfloat Light_Model_Ambient[] = { 0.2, 0.2, 0.2, 1.0 }; //环境光参数
+
+	glClearColor(0.0, 0.0, 0.0, 0.0);  //背景色
+	glShadeModel(GL_SMOOTH);           //多变性填充模式
+
+	//材质属性
+	glMaterialfv(GL_FRONT, GL_SPECULAR, mat_specular);
+	glMaterialfv(GL_FRONT, GL_SHININESS, mat_shininess);
+
+	//灯光设置
+	glLightfv(GL_LIGHT0, GL_POSITION, light_position);
+	glLightfv(GL_LIGHT0, GL_DIFFUSE, white_light);   //散射光属性
+	glLightfv(GL_LIGHT0, GL_SPECULAR, white_light);  //镜面反射光
+	glLightModelfv(GL_LIGHT_MODEL_AMBIENT, Light_Model_Ambient);  //环境光参数
+
+	glEnable(GL_LIGHTING);   //开关:使用光
+	glEnable(GL_LIGHT0);     //打开0#灯
+	glEnable(GL_DEPTH_TEST); //打开深度测试
 }
 void reshape(int w, int h)
 {
@@ -59,13 +82,12 @@ void display(void)
 	{
 		temp = 0;
 	}
-	gluLookAt(-temp, -temp, 0, 0, -1, 0, 0, 1, 0);
+	gluLookAt(-temp, 0, 0, 0, -1, 0, 0, 1, 0);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glPushMatrix();
 	{
 		RenderBone(100, 100, 100, 200, 300, 100);
 	} glPopMatrix();
-	
 	glFlush();
 	glutPostRedisplay();
 }
