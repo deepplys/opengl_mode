@@ -1,0 +1,335 @@
+#include <gl/glut.h>
+#include <cstdio>
+#include <cstdlib>
+#include <cmath>
+const double pi = acos(-1);
+void	init(void);
+void	reshape(int w, int h);
+void	display(void);
+
+void RenderBone(float x0, float y0, float z0, float x1, float y1, float z1);
+int main(int argc, char** argv)
+{
+	glutInit(&argc, argv);
+	glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB | GLUT_DEPTH);
+	glutInitWindowSize(500, 500);
+	glutInitWindowPosition(100, 100);
+	glutCreateWindow("Sphere");
+	init();
+	glutReshapeFunc(reshape);
+	glutDisplayFunc(display);
+	glutMainLoop();
+	return 0;
+}
+void init(void)
+{
+	glClearColor(0.0, 0.0, 0.0, 0.0);
+	glClearDepth(1);
+	glShadeModel(GL_SMOOTH);
+	GLfloat _ambient[] = { 1.0,1.0,1.0,1.0 };
+	GLfloat _diffuse[] = { 1.0,1.0,0.0,1.0 };
+	GLfloat _specular[] = { 1.0,1.0,1.0,1.0 };
+	GLfloat _position[] = { 0,0,1000,0 };
+	GLfloat _ambient1[] = { 1.0,1.0,1.0,1.0 };
+	GLfloat _diffuse1[] = { 0,1.0,1.0,0.5 };
+	GLfloat _specular1[] = { 1.0,1.0,1.0,1.0 };
+	GLfloat _position1[] = { 0,1000,0,0 };
+
+	glLightfv(GL_LIGHT0, GL_AMBIENT, _ambient);
+	glLightfv(GL_LIGHT0, GL_DIFFUSE, _diffuse);
+	glLightfv(GL_LIGHT0, GL_SPECULAR, _specular);
+	glLightfv(GL_LIGHT0, GL_POSITION, _position);
+	glLightfv(GL_LIGHT1, GL_AMBIENT, _ambient1);
+	glLightfv(GL_LIGHT1, GL_DIFFUSE, _diffuse1);
+	glLightfv(GL_LIGHT1, GL_SPECULAR, _specular1);
+	glLightfv(GL_LIGHT1, GL_POSITION, _position1);
+	glEnable(GL_TEXTURE_2D);
+	glEnable(GL_LIGHTING);
+	glEnable(GL_LIGHT0);
+	glEnable(GL_LIGHT1);
+	glEnable(GL_DEPTH_TEST);
+	glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, GL_TRUE);
+	glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
+}
+void reshape(int w, int h)
+{
+	glViewport(0, 0, (GLsizei)w, (GLsizei)h);
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+	glOrtho(-30, 30, -30, 30, -20, 20);
+	glMatrixMode(GL_MODELVIEW);
+	glLoadIdentity();
+}
+double temp = 0;
+void display(void)
+{
+	glMatrixMode(GL_MODELVIEW);
+	glLoadIdentity();
+	temp = (temp + 0.2);
+	if (temp > 7)
+	{
+		temp = 0;
+	}
+	gluLookAt(-temp,-temp , 0, 0, -1, 0, 0, 1, 0);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glPushMatrix();
+	{
+		RenderBone(0, 0, 0, 10, 10, 1);
+	} glPopMatrix();
+	glFlush();
+	glutPostRedisplay();
+}
+void RenderBone(float x0, float y0, float z0, float x1, float y1, float z1)
+{
+	GLdouble  dir_x = x1 - x0;
+	GLdouble  dir_y = y1 - y0;
+	GLdouble  dir_z = z1 - z0;
+	GLdouble  bone_length = sqrt(dir_x * dir_x + dir_y * dir_y + dir_z * dir_z);
+	static GLUquadricObj* quad_obj = NULL;
+	static GLUquadricObj* quad_obj1 = NULL;
+	if (quad_obj == NULL)
+		quad_obj = gluNewQuadric();
+	if (quad_obj1 == NULL)
+		quad_obj1 = gluNewQuadric();
+	gluQuadricDrawStyle(quad_obj, GLU_FILL);
+	gluQuadricDrawStyle(quad_obj1, GLU_FILL);
+	gluQuadricNormals(quad_obj, GLU_SMOOTH);
+	gluQuadricNormals(quad_obj1, GLU_SMOOTH);
+	glPushMatrix();
+	// 平移到起始点
+	glTranslated(x0, y0, z0);
+	// 计算长度
+	double  length;
+	length = sqrt(dir_x * dir_x + dir_y * dir_y + dir_z * dir_z);
+	if (length < 0.0001) {
+		dir_x = 0.0; dir_y = 0.0; dir_z = 1.0;  length = 1.0;
+	}
+	dir_x /= length;  dir_y /= length;  dir_z /= length;
+	GLdouble  up_x, up_y, up_z;
+	up_x = 0.0;
+	up_y = 1.0;
+	up_z = 0.0;
+	double  side_x, side_y, side_z;
+	side_x = up_y * dir_z - up_z * dir_y;
+	side_y = up_z * dir_x - up_x * dir_z;
+	side_z = up_x * dir_y - up_y * dir_x;
+	length = sqrt(side_x * side_x + side_y * side_y + side_z * side_z);
+	if (length < 0.0001) {
+		side_x = 1.0; side_y = 0.0; side_z = 0.0;  length = 1.0;
+	}
+	side_x /= length;  side_y /= length;  side_z /= length;
+	up_x = dir_y * side_z - dir_z * side_y;
+	up_y = dir_z * side_x - dir_x * side_z;
+	up_z = dir_x * side_y - dir_y * side_x;
+	// 计算变换矩阵
+	GLdouble  m[16] = { side_x, side_y, side_z, 0.0,
+		up_x,   up_y,   up_z,   0.0,
+		dir_x,  dir_y,  dir_z,  0.0,
+		0.0,    0.0,    0.0,    1.0 };
+	glMultMatrixd(m);
+	double x = 10;
+	double y = 10;
+	
+	//glPolygonMode(GL_FRONT_AND_BACK, GL_TRIANGLE_STRIP);
+	glColor3f(1, 0, 1);
+	for (double k = -10; k <= 10; k += 0.2) {
+		for (double i = -x; i <= x; i += 0.2)
+		{
+			glBegin(GL_LINE_STRIP);
+			for (double j = -y; j <= y; j += 0.2)
+			{
+				if (i <= -6)
+				{
+					if (j <= -6)
+					{
+						double len = -i - 6;
+						double len1 = -j - 6;
+						if (abs(len) * abs(len) + abs(len1) * abs(len1) >= 16)
+						{
+							glEnd();
+							glBegin(GL_LINE_STRIP);
+							continue;
+						}
+					}
+					else if (j >= 6)
+					{
+						double len = -i - 6;
+						double len1 = j - 6;
+						if (abs(len) * abs(len) + abs(len1) * abs(len1) >= 16)
+						{
+							glEnd();
+							glBegin(GL_LINE_STRIP);
+							continue;
+						}
+					}
+				}
+				else if (i >= 6)
+				{
+					if (j <= -6)
+					{
+						double len = i - 6;
+						double len1 = -j - 6;
+						if (abs(len) * abs(len) + abs(len1) * abs(len1) >= 16)
+						{
+							glEnd();
+							glBegin(GL_LINE_STRIP);
+							continue;
+						}
+					}
+					else if (j >= 6)
+					{
+						double len = i - 6;
+						double len1 = j - 6;
+						if (abs(len) * abs(len) + abs(len1) * abs(len1) >= 16)
+						{
+							glEnd();
+							glBegin(GL_LINE_STRIP);
+							continue;
+						}
+					}
+				}
+				if (abs(i) * abs(i) + abs(j) * abs(j) <= 16)
+				{
+					glEnd();
+					glBegin(GL_LINE_STRIP);
+					continue;
+				}
+				else
+				{
+					glVertex3f(i, j, k);
+				}
+			}
+			glEnd();
+		}
+	}
+	/*
+	for (double i = -x; i <= x; i += 0.1)
+	{
+		glBegin(GL_LINE_STRIP);
+		for (double j = -y; j <= y; j += 0.1)
+		{
+			if (i <= -40)
+			{
+				if (j <= -40)
+				{
+					double len = -i - 40;
+					double len1 = -j - 40;
+					if (abs(len) * abs(len) + abs(len1) * abs(len1) >= 100)
+					{
+						glEnd();
+						glBegin(GL_LINE_STRIP);
+						continue;
+					}
+				}
+				else if (j >= 40)
+				{
+					double len = -i - 40;
+					double len1 = j - 40;
+					if (abs(len) * abs(len) + abs(len1) * abs(len1) >= 100)
+					{
+						glEnd();
+						glBegin(GL_LINE_STRIP);
+						continue;
+					}
+				}
+			}
+			else if (i >= 40)
+			{
+				if (j <= -40)
+				{
+					double len = i - 40;
+					double len1 = -j - 40;
+					if (abs(len) * abs(len) + abs(len1) * abs(len1) >= 100)
+					{
+						glEnd();
+						glBegin(GL_LINE_STRIP);
+						continue;
+					}
+				}
+				else if (j >= 40)
+				{
+					double len = i - 40;
+					double len1 = j - 40;
+					if (abs(len) * abs(len) + abs(len1) * abs(len1) >= 100)
+					{
+						glEnd();
+						glBegin(GL_LINE_STRIP);
+						continue;
+					}
+				}
+			}
+			if (abs(i) * abs(i) + abs(j) * abs(j) <= 100)
+			{
+				glEnd();
+				glBegin(GL_LINE_STRIP);
+				continue;
+			}
+			else
+			{
+				glVertex3f(i, j, -20);
+			}
+		}
+		glEnd();
+	}
+	for (double j = -20; j <= 20; j+=0.1)
+	{
+		glBegin(GL_LINE_STRIP);
+		for (double i = 0; i <= 2 * pi; i+=pi/180)
+		{
+			glVertex3f(10 * sin(i), 10 * cos(i), j);
+		}
+		glEnd();
+	}
+	for (double j = -20; j <= 20; j+=0.1)
+	{
+		glBegin(GL_LINE_STRIP);
+		for (double i = -40; i <= 40; i += 0.1)
+		{
+			glVertex3f(-50, i, j);
+		}
+		glEnd();
+		glBegin(GL_LINE_STRIP);
+		for (double i = pi; i >= pi/2;i -= pi / 180)
+		{
+			glVertex3f(-40 + 10 * sin(i), 40 + 10 * cos(i), j);
+		}
+		glEnd();
+		glBegin(GL_LINE_STRIP);
+		for (double i = -40; i <= 40; i += 0.1)
+		{
+			glVertex3f(i, 50, j);
+		}
+		glEnd();
+		glBegin(GL_LINE_STRIP);
+		for (double i = pi/2; i >=0; i -= pi / 180)
+		{
+			glVertex3f(40 + 10 * sin(i), 40 + 10 * cos(i), j);
+		}
+		glEnd();
+		glBegin(GL_LINE_STRIP);
+		for (double i = 40; i >= -40; i -= 0.1)
+		{
+			glVertex3f(50, i, j);
+		}
+		glEnd();
+		glBegin(GL_LINE_STRIP);
+		for (double i =0; i >= -pi/2; i -= pi / 180)
+		{
+			glVertex3f(40 + 10 * sin(i), -40 + 10 * cos(i), j);
+		}
+		glEnd();
+		glBegin(GL_LINE_STRIP);
+		for (double i = 40; i >= -40; i -= 0.1)
+		{
+			glVertex3f(i, -50, j);
+		}
+		glEnd();
+		glBegin(GL_LINE_STRIP);
+		for (double i = -pi/2; i >= -pi; i -= pi / 180)
+		{
+			glVertex3f(-40 + 10 * sin(i), -40 + 10 * cos(i), j);
+		}
+		glEnd();
+	}*/
+	glPopMatrix();
+}
