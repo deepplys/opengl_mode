@@ -1,1 +1,135 @@
+#include<gl/glut.h>
+#include <cstdio>
+#include <cstdlib>
+#include <cmath>
+void	init(void);
+void	reshape(int w, int h);
+void	display(void);
 
+void RenderBone(GLdouble x0, GLdouble y0, GLdouble z0, GLdouble x1, GLdouble y1, GLdouble z1);
+int main(int argc, char** argv)
+{
+	glutInit(&argc, argv);
+	glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB | GLUT_DEPTH);
+	glutInitWindowSize(500, 500);
+	glutInitWindowPosition(100, 100);
+	glutCreateWindow("Sphere");
+	init();
+	glutReshapeFunc(reshape);
+	glutDisplayFunc(display);
+	glutMainLoop();
+	return 0;
+}
+void init(void)
+{
+	glClearColor(0.0, 0.0, 0.0, 0.0);
+	glClearDepth(1);
+	glShadeModel(GL_SMOOTH);
+	GLfloat _ambient[] = { 1.0,1.0,1.0,1.0 };
+	GLfloat _diffuse[] = { 1.0,1.0,0.0,1.0 };
+	GLfloat _specular[] = { 1.0,1.0,1.0,1.0 };
+	GLfloat _position[] = { 200,200,200,0 };
+	glLightfv(GL_LIGHT0, GL_AMBIENT, _ambient);
+	glLightfv(GL_LIGHT0, GL_DIFFUSE, _diffuse);
+	glLightfv(GL_LIGHT0, GL_SPECULAR, _specular);
+	glLightfv(GL_LIGHT0, GL_POSITION, _position);
+	glEnable(GL_TEXTURE_2D);
+	glEnable(GL_LIGHTING);
+	glEnable(GL_LIGHT0);
+	glEnable(GL_DEPTH_TEST);
+	glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
+}
+void reshape(int w, int h)
+{
+	glViewport(0, 0, (GLsizei)w, (GLsizei)h);
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+	glOrtho(0.0, 500, 0.0, 500, -500, 500);
+	glMatrixMode(GL_MODELVIEW);
+	glLoadIdentity();
+}
+double temp = 0;
+void display(void)
+{
+	glMatrixMode(GL_MODELVIEW);
+	glLoadIdentity();
+	temp = (temp + 0.0002);
+	if (temp > 5)
+	{
+		temp = 0;
+	}
+	gluLookAt(-temp, -temp, 0, 0, -1, 0, 0, 1, 0);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glPushMatrix();
+	{
+		RenderBone(100, 100, 100, 200, 300, 100);
+	} glPopMatrix();
+	
+	glFlush();
+	glutPostRedisplay();
+}
+void RenderBone(GLdouble x0, GLdouble y0, GLdouble z0, GLdouble x1, GLdouble y1, GLdouble z1)
+{
+	GLdouble  dir_x = x1 - x0;
+	GLdouble  dir_y = y1 - y0;
+	GLdouble  dir_z = z1 - z0;
+	GLdouble  bone_length = sqrt(dir_x * dir_x + dir_y * dir_y + dir_z * dir_z);
+	static GLUquadricObj* quad_obj = NULL;
+	static GLUquadricObj* quad_obj1 = NULL;
+	if (quad_obj == NULL)
+		quad_obj = gluNewQuadric();
+	if (quad_obj1 == NULL)
+		quad_obj1 = gluNewQuadric();
+	gluQuadricDrawStyle(quad_obj, GLU_FILL);
+	gluQuadricDrawStyle(quad_obj1, GLU_FILL);
+	gluQuadricNormals(quad_obj, GLU_SMOOTH);
+	gluQuadricNormals(quad_obj1, GLU_SMOOTH);
+	glPushMatrix();
+	// 平移到起始点
+	glTranslated(x0, y0, z0);
+	// 计算长度
+	double  length;
+	length = sqrt(dir_x * dir_x + dir_y * dir_y + dir_z * dir_z);
+	if (length < 0.0001) {
+		dir_x = 0.0; dir_y = 0.0; dir_z = 1.0;  length = 1.0;
+	}
+	dir_x /= length;  dir_y /= length;  dir_z /= length;
+	GLdouble  up_x, up_y, up_z;
+	up_x = 0.0;
+	up_y = 1.0;
+	up_z = 0.0;
+	double  side_x, side_y, side_z;
+	side_x = up_y * dir_z - up_z * dir_y;
+	side_y = up_z * dir_x - up_x * dir_z;
+	side_z = up_x * dir_y - up_y * dir_x;
+	length = sqrt(side_x * side_x + side_y * side_y + side_z * side_z);
+	if (length < 0.0001) {
+		side_x = 1.0; side_y = 0.0; side_z = 0.0;  length = 1.0;
+	}
+	side_x /= length;  side_y /= length;  side_z /= length;
+	up_x = dir_y * side_z - dir_z * side_y;
+	up_y = dir_z * side_x - dir_x * side_z;
+	up_z = dir_x * side_y - dir_y * side_x;
+	// 计算变换矩阵
+	GLdouble  m[16] = { side_x, side_y, side_z, 0.0,
+		up_x,   up_y,   up_z,   0.0,
+		dir_x,  dir_y,  dir_z,  0.0,
+		0.0,    0.0,    0.0,    1.0 };
+	glMultMatrixd(m);
+	// 圆柱体参数
+	GLdouble radius = 20;		// 半径
+	GLdouble slices = 10.0;		//	段数
+	GLdouble stack = 3.0;		// 递归次数
+	GLdouble r = radius;
+	while (r >= 10) {
+		static GLUquadricObj* quad_obj3 = NULL;
+		if (quad_obj3 == NULL)
+			quad_obj3 = gluNewQuadric();
+		gluQuadricDrawStyle(quad_obj3, GLU_FILL);
+		gluQuadricNormals(quad_obj3, GLU_SMOOTH);
+		gluCylinder(quad_obj3, r, r, bone_length, slices, stack);
+		r -= 0.2;
+	}
+	//gluCylinder()
+	glPopMatrix();
+}
