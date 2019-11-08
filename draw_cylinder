@@ -5,8 +5,9 @@
 void	init(void);
 void	reshape(int w, int h);
 void	display(void);
-
 void RenderBone(GLdouble x0, GLdouble y0, GLdouble z0, GLdouble x1, GLdouble y1, GLdouble z1);
+
+const double pi = acos(-1);
 int main(int argc, char** argv)
 {
 	glutInit(&argc, argv);
@@ -117,19 +118,28 @@ void RenderBone(GLdouble x0, GLdouble y0, GLdouble z0, GLdouble x1, GLdouble y1,
 		0.0,    0.0,    0.0,    1.0 };
 	glMultMatrixd(m);
 	// 圆柱体参数
-	GLdouble radius = 20;		// 半径
-	GLdouble slices = 10.0;		//	段数
-	GLdouble stack = 3.0;		// 递归次数
+	GLdouble radius = 60;		// 半径
+	GLdouble slices = 50;		//	段数
+	GLdouble stack = 10.0;		// 递归次数
 	GLdouble r = radius;
-	while (r >= 10) {
-		static GLUquadricObj* quad_obj3 = NULL;
-		if (quad_obj3 == NULL)
-			quad_obj3 = gluNewQuadric();
-		gluQuadricDrawStyle(quad_obj3, GLU_FILL);
-		gluQuadricNormals(quad_obj3, GLU_SMOOTH);
-		gluCylinder(quad_obj3, r, r, bone_length, slices, stack);
-		r -= 0.2;
+	gluCylinder(quad_obj, r, r, bone_length, slices, stack);
+	gluCylinder(quad_obj1, r-40, r-40, bone_length, slices, stack);
+	glBegin(GL_QUAD_STRIP);
+	for (double  cit= 0; cit < pi*2; cit+=pi/180)
+	{
+		glVertex3f(r * sin(cit), r * cos(cit), bone_length);
+		glVertex3f((r - 40) * sin(cit), (r - 40) * cos(cit), bone_length);
 	}
+	//glVertex3f(r * sin(0), r * cos(0), bone_length);
+	glEnd();
+	glBegin(GL_QUAD_STRIP);
+	for (double cit = 0; cit < pi * 2; cit += pi / 180)
+	{
+		glVertex3f(r * sin(cit), r * cos(cit), 0);
+		glVertex3f((r - 40) * sin(cit), (r - 40) * cos(cit), 0);
+	}
+	//glVertex3f(r * sin(0), r * cos(0), bone_length);
+	glEnd();
 	//gluCylinder()
 	glPopMatrix();
 }
