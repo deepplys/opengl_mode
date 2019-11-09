@@ -1,0 +1,205 @@
+#include<gl/glut.h>
+#include<stdio.h>
+#include<iostream>
+using namespace std;
+typedef struct materialStruct
+{
+	GLfloat ambient[4];
+	GLfloat diffuse[4];
+	GLfloat specular[4];
+	GLfloat shininess;
+}materialStruct;
+materialStruct brassMaterials =
+{
+	{0.33,0.22,0.03,1.0},
+	{0.78,0.57,0.11,1.0},
+	{0.99,0.91,0.81,1.0},
+	27.8
+};
+materialStruct redPlasticMaterials =
+{
+	{0.3,0,0,1.0},
+	{0.6,0,0,1.0},
+	{0.8,0.6,0.6,1.0},
+	32.0
+};
+materialStruct whiteShinyMaterials =
+{
+	{1,1,1,1},
+    {1,1,1,1},
+    {1,1,1,1},
+	100.0
+};
+void materials(materialStruct *materials)
+{
+	glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, materials->ambient);
+	glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, materials->diffuse);
+	glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, materials->specular);
+	glMaterialfv(GL_FRONT_AND_BACK, GL_SHININESS, &materials->shininess);
+}
+typedef struct lightingStruct
+{
+	GLfloat ambient[4];
+	GLfloat diffuse[4];
+	GLfloat specular[4];
+}lightingStruct;
+lightingStruct whiteLighting =
+{
+	{0,0,0,1},{1,1,1,1},{1,1,1,1}
+};
+lightingStruct colorredLighting =
+{
+	{0.2,0,0,1},{0,1,0,1},{0,0,1,1}
+};
+GLfloat light0_pos[4] = { 0.9,0.9,2.25,0 };
+materialStruct *currentMaterials;
+lightingStruct *currentLighting;
+GLfloat vertices[][3] =
+{
+	{-1,-1,1},{-1,1,1},{1,1,1}, {1,-1,1},{-1,-1,-1},{-1,1,-1},{1,1,-1},{1,-1,-1}
+};
+GLfloat colors[][3] =
+{
+	{1,0,0},{0,1,1},{1,1,0},{0,1,0},{0,0,1},{1,0,1}
+};
+void polygon(int a, int b, int c, int d)
+{
+	glBegin(GL_POLYGON);
+	glVertex3fv(vertices[a]);
+	glVertex3fv(vertices[b]);
+	glVertex3fv(vertices[c]);
+	glVertex3fv(vertices[d]);
+	glEnd();
+}
+GLfloat normals[][3] =
+{
+	{0,0,-1},{0,1,0},{-1,0,0},{1,0,0},{0,0,1},{0,-1,0}
+};
+void colorCube()
+{
+	glNormal3fv(normals[0]);
+	polygon(0, 3, 2, 1);
+	glNormal3fv(normals[1]);
+	polygon(2, 3, 7, 6);
+	glNormal3fv(normals[2]);
+	polygon(0, 4, 7, 3);
+	glNormal3fv(normals[3]);
+	polygon(1, 2, 6, 5);
+	glNormal3fv(normals[4]);
+	polygon(4, 5, 6, 7);
+	glNormal3fv(normals[5]);
+	polygon(0, 1, 5, 4);
+	glFlush();
+}
+void init()
+{
+	glEnable(GL_LIGHTING);
+	glEnable(GL_LIGHT0);
+	currentMaterials = &redPlasticMaterials;
+	glMaterialfv(GL_FRONT, GL_AMBIENT, currentMaterials->ambient);
+	glMaterialfv(GL_FRONT, GL_DIFFUSE, currentMaterials->diffuse);
+	glMaterialfv(GL_FRONT, GL_SPECULAR, currentMaterials->specular);
+	glMaterialfv(GL_FRONT, GL_SHININESS, &currentMaterials->shininess);
+	currentLighting = &colorredLighting;
+	glLightfv(GL_LIGHT0, GL_AMBIENT, currentLighting->ambient);
+	glLightfv(GL_LIGHT0, GL_DIFFUSE, currentLighting->diffuse);
+	glLightfv(GL_LIGHT0, GL_SPECULAR, currentLighting->specular);
+	glLightfv(GL_LIGHT0, GL_POSITION, light0_pos);
+}
+int axis;
+float theta[3];
+void mouse(int btn, int state, int x, int y)
+{
+	if (btn == GLUT_LEFT_BUTTON && state == GLUT_DOWN)
+	{
+		axis = 0;
+	}
+	if (btn == GLUT_MIDDLE_BUTTON && state == GLUT_DOWN)
+	{
+		axis = 1;
+	}
+	if (btn == GLUT_RIGHT_BUTTON && state == GLUT_DOWN)
+	{
+		axis = 2;
+	}
+}
+void spinCube()
+{
+	theta[axis] += 0.1;
+	if (theta[axis] > 360.0)theta[axis] -= 360.0;
+	glutPostRedisplay();
+}
+void key(unsigned char k, int x, int y)
+{
+	switch (k)
+	{
+	case '1':
+		glutIdleFunc(NULL);
+		break;
+	case '2':
+		glutIdleFunc(spinCube);
+		break;
+	case '3':
+		currentMaterials = &redPlasticMaterials;
+		break;
+	case '4':
+		currentMaterials = &brassMaterials;
+		break;
+	case '5':
+		currentMaterials = &whiteShinyMaterials;
+		break;
+	case '6':
+		currentLighting = &whiteLighting;
+		break;
+	case '7':
+		currentLighting = &colorredLighting;
+		break;
+	case 'q':
+		exit(0);
+		break;
+	default:
+		break;
+	}
+	glMaterialfv(GL_FRONT, GL_AMBIENT, currentMaterials->ambient);
+	glMaterialfv(GL_FRONT, GL_DIFFUSE, currentMaterials->diffuse);
+	glMaterialfv(GL_FRONT, GL_SPECULAR, currentMaterials->specular);
+	glMaterialfv(GL_FRONT, GL_SHININESS, &currentMaterials->shininess);
+	glLightfv(GL_LIGHT0, GL_AMBIENT, currentLighting->ambient);
+	glLightfv(GL_LIGHT0, GL_DIFFUSE, currentLighting->diffuse);
+	glLightfv(GL_LIGHT0, GL_SPECULAR, currentLighting->specular);
+	glLightfv(GL_LIGHT0, GL_POSITION, light0_pos);
+	glutPostRedisplay();
+}
+void display()
+{
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glLoadIdentity();
+	glRotated(theta[0], 1, 0, 0);
+	glRotated(theta[1], 0, 1, 0);
+	glRotated(theta[2], 0, 0, 1);
+	colorCube();
+	glutSwapBuffers();
+}
+void reshape(int w, int h)
+{
+	glViewport(0, 0, (GLsizei)w, (GLsizei)h);
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+	glOrtho(-5.0, 5, -5, 5, -5, 5);
+	glMatrixMode(GL_MODELVIEW);
+	glLoadIdentity();
+}
+int main(int argc, char** argv)
+{
+	glutInit(&argc, argv);
+	glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB | GLUT_DEPTH);
+	glutInitWindowSize(500, 500);
+	glutInitWindowPosition(100, 100);
+	glutCreateWindow("Sphere");
+	init();
+	glutReshapeFunc(reshape);
+	glutDisplayFunc(display);
+	glutMouseFunc(mouse);
+	glutKeyboardFunc(key);
+	glutMainLoop();
+}
