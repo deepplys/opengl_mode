@@ -14,7 +14,7 @@ int main(int argc, char** argv)
 	glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB | GLUT_DEPTH);
 	glutInitWindowSize(500, 500);
 	glutInitWindowPosition(100, 100);
-	glutCreateWindow("Sphere");
+	glutCreateWindow("hollow cylinder    created by cxl");
 	init();
 	glutReshapeFunc(reshape);
 	glutDisplayFunc(display);
@@ -23,26 +23,11 @@ int main(int argc, char** argv)
 }
 void init(void)
 {
-	/*glClearColor(0.0, 0.0, 0.0, 0.0);
-	glClearDepth(1);
-	glShadeModel(GL_SMOOTH);
-	GLfloat _ambient[] = { 1.0,1.0,1.0,1.0 };
-	GLfloat _diffuse[] = { 1.0,1.0,0.0,1.0 };
-	GLfloat _specular[] = { 1.0,1.0,1.0,1.0 };
-	GLfloat _position[] = { 200,200,200,0 };
-	glLightfv(GL_LIGHT0, GL_AMBIENT, _ambient);
-	glLightfv(GL_LIGHT0, GL_DIFFUSE, _diffuse);
-	glLightfv(GL_LIGHT0, GL_SPECULAR, _specular);
-	glLightfv(GL_LIGHT0, GL_POSITION, _position);
-	glEnable(GL_TEXTURE_2D);
-	glEnable(GL_LIGHTING);
-	glEnable(GL_LIGHT0);
-	glEnable(GL_DEPTH_TEST);
-	glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);*/
+	
 	//材质反光性设置
 	GLfloat mat_specular[] = { 1.0, 1.0, 1.0, 1.0 };  //镜面反射参数
 	GLfloat mat_shininess[] = { 50.0 };               //高光指数
-	GLfloat light_position[] = { 1.0, 1.0, 1.0, 0.0 };
+	GLfloat light_position[] = { 9.0, 9.0, 9.0, 0.0 };
 	GLfloat white_light[] = { 1.0, 1.0, 1.0, 1.0 };   //灯位置(1,1,1), 最后1-开关
 	GLfloat Light_Model_Ambient[] = { 0.2, 0.2, 0.2, 1.0 }; //环境光参数
 
@@ -58,10 +43,9 @@ void init(void)
 	glLightfv(GL_LIGHT0, GL_DIFFUSE, white_light);   //散射光属性
 	glLightfv(GL_LIGHT0, GL_SPECULAR, white_light);  //镜面反射光
 	glLightModelfv(GL_LIGHT_MODEL_AMBIENT, Light_Model_Ambient);  //环境光参数
-
 	glEnable(GL_LIGHTING);   //开关:使用光
 	glEnable(GL_LIGHT0);     //打开0#灯
-	glEnable(GL_DEPTH_TEST); //打开深度测试
+	glEnable(GL_DEPTH_TEST); //打开深度测试	
 }
 void reshape(int w, int h)
 {
@@ -78,15 +62,15 @@ void display(void)
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 	temp = (temp + 0.0002);
-	if (temp > 5)
+	if (temp > 4)
 	{
 		temp = 0;
 	}
-	gluLookAt(-temp, 0, 0, 0, -1, 0, 0, 1, 0);
+	gluLookAt(-temp,0, 0, 0, -1, 0, 0, 1, 0);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glPushMatrix();
 	{
-		RenderBone(100, 100, 100, 200, 300, 100);
+		RenderBone(100, 100, 100, 200, 200, 200);
 	} glPopMatrix();
 	glFlush();
 	glutPostRedisplay();
@@ -97,16 +81,6 @@ void RenderBone(GLdouble x0, GLdouble y0, GLdouble z0, GLdouble x1, GLdouble y1,
 	GLdouble  dir_y = y1 - y0;
 	GLdouble  dir_z = z1 - z0;
 	GLdouble  bone_length = sqrt(dir_x * dir_x + dir_y * dir_y + dir_z * dir_z);
-	static GLUquadricObj* quad_obj = NULL;
-	static GLUquadricObj* quad_obj1 = NULL;
-	if (quad_obj == NULL)
-		quad_obj = gluNewQuadric();
-	if (quad_obj1 == NULL)
-		quad_obj1 = gluNewQuadric();
-	gluQuadricDrawStyle(quad_obj, GLU_FILL);
-	gluQuadricDrawStyle(quad_obj1, GLU_FILL);
-	gluQuadricNormals(quad_obj, GLU_SMOOTH);
-	gluQuadricNormals(quad_obj1, GLU_SMOOTH);
 	glPushMatrix();
 	// 平移到起始点
 	glTranslated(x0, y0, z0);
@@ -141,14 +115,28 @@ void RenderBone(GLdouble x0, GLdouble y0, GLdouble z0, GLdouble x1, GLdouble y1,
 	glMultMatrixd(m);
 	// 圆柱体参数
 	GLdouble radius = 60;		// 半径
-	GLdouble slices = 50;		//	段数
-	GLdouble stack = 10.0;		// 递归次数
 	GLdouble r = radius;
-	gluCylinder(quad_obj, r, r, bone_length, slices, stack);
-	gluCylinder(quad_obj1, r-40, r-40, bone_length, slices, stack);
+	//gluCylinder(quad_obj, r, r, bone_length, slices, stack);
+	glBegin(GL_QUAD_STRIP);
+	for (double cit = 0; cit < pi * 2; cit += pi / 180)
+	{
+		glNormal3f(sin(cit + pi / 360), cos(cit + pi / 360), 0);
+		glVertex3f((r) * sin(cit), (r) * cos(cit), bone_length);
+		glVertex3f((r) * sin(cit), (r) * cos(cit), 0);
+	}
+	glEnd();
+	glBegin(GL_QUAD_STRIP);
+	for (double cit = 0; cit < pi * 2; cit += pi / 180)
+	{
+		glNormal3f(-sin(cit+pi/360), -cos(cit + pi / 360), 0);
+		glVertex3f((r - 40) * sin(cit), (r - 40) * cos(cit), bone_length);
+		glVertex3f((r - 40) * sin(cit), (r - 40) * cos(cit), 0);
+	}
+	glEnd();
 	glBegin(GL_QUAD_STRIP);
 	for (double  cit= 0; cit < pi*2; cit+=pi/180)
 	{
+		glNormal3f(0, 0, 1);
 		glVertex3f(r * sin(cit), r * cos(cit), bone_length);
 		glVertex3f((r - 40) * sin(cit), (r - 40) * cos(cit), bone_length);
 	}
@@ -157,11 +145,10 @@ void RenderBone(GLdouble x0, GLdouble y0, GLdouble z0, GLdouble x1, GLdouble y1,
 	glBegin(GL_QUAD_STRIP);
 	for (double cit = 0; cit < pi * 2; cit += pi / 180)
 	{
+		glNormal3f(0, 0, -1);
 		glVertex3f(r * sin(cit), r * cos(cit), 0);
 		glVertex3f((r - 40) * sin(cit), (r - 40) * cos(cit), 0);
 	}
-	//glVertex3f(r * sin(0), r * cos(0), bone_length);
 	glEnd();
-	//gluCylinder()
 	glPopMatrix();
 }
