@@ -1,0 +1,500 @@
+#include<gl/glut.h>
+#include<iostream>
+#include<stdio.h>
+#define STB_IMAGE_IMPLEMENTATION
+#include "F:\projectsources\stb\stb_image.h"
+using namespace std;
+float light_angle = 0;//光源角度 
+float light_radius = 20.0;//光源半径
+const double pi = acos(-1);
+double cit = 0;
+GLfloat poin[3][3];
+struct node
+{
+	double x, y, z;
+	node(){}
+	node(double _x, double _y, double _z)
+	{
+		x = _x;
+		y = _y;
+		z = _z;
+	}
+};
+typedef struct materialStruct
+{
+	GLfloat ambient[4];//环境反射
+	GLfloat diffuse[4];//漫反射
+	GLfloat specular[4];//镜面反射
+	GLfloat shininess;//辉度系数
+}materialStruct;
+materialStruct brassMaterials =
+{
+	{0.33,0.22,0.03,1.0},
+	{0.78,0.57,0.11,1.0},
+	{0.99,0.91,0.81,1.0},
+	27.8
+};
+materialStruct redPlasticMaterials =
+{
+	{0.3,0.0,0.0,1.0},
+	{0.6,0.0,0.0,1.0},
+	{0.8,0.6,0.6,1.0},
+	32.0
+};
+materialStruct whiteShinyMaterials =
+{
+	{1.0,1.0,1.0,1.0},
+	{1.0,1.0,1.0,1.0},
+	{1.0,1.0,1.0,1.0},
+	10.0
+};
+typedef struct lightingStruct
+{
+	GLfloat ambient[4];//环境光
+	GLfloat diffuse[4];//漫反光
+	GLfloat specular[4];//镜面光
+}lightingStruct;
+lightingStruct whiteLighting =
+{
+	{0,0,0,1},{1,1,1,1},{1,1,1,1}
+};
+lightingStruct colorredLighting =
+{
+	{0,0,0,1},{1,0,0,1},{1,0,0,1}
+};
+lightingStruct colorblueLighting =
+{
+	{0,0,0,1},{0,0,1,1},{0,0,1,1}
+};
+lightingStruct colorgreenLighting =
+{
+	{0,0,0,1},{0,1,0,1},{0,1,0,1}
+};
+lightingStruct *currentLighting;
+void materials(materialStruct* materials)//设置相关材质
+{
+	glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, materials->ambient);
+	glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, materials->diffuse);
+	glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, materials->specular);
+	glMaterialfv(GL_FRONT_AND_BACK, GL_SHININESS, &materials->shininess);
+}
+void material_earth(void)
+{
+	glEnable(GL_COLOR_MATERIAL);
+	GLfloat mat_specular[] = { 1.0,1.0,1.0,1.0 };      
+	GLfloat mat_shininess[] = { 100.0 };                 
+	GLfloat mat_diffuse[] = { 1.0,1.0,1.0,1.0 };     
+	GLfloat white_light[] = { 1.0,1.0,1.0,1.0 };
+	glMaterialfv(GL_FRONT, GL_SPECULAR, mat_specular);  
+	glMaterialfv(GL_FRONT, GL_SHININESS, mat_shininess); 
+	glMaterialfv(GL_FRONT, GL_DIFFUSE, mat_diffuse); 
+	glMaterialfv(GL_FRONT, GL_AMBIENT, white_light);     
+}
+void spin()
+{
+	cit += 2;
+	if (cit >= 360)
+	{
+		cit -= 360;
+	}
+	glutPostRedisplay();
+}
+void drawearth(double x0, double y0, double z0, double r)
+{
+	glPushMatrix();
+	unsigned int texture1;
+	glGenTextures(1, &texture1);
+	glBindTexture(GL_TEXTURE_2D, texture1);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	int width, height, nrChannels;
+	stbi_set_flip_vertically_on_load(true);
+	unsigned char* data = stbi_load("./tex1.jpg", &width, &height, &nrChannels, 0);
+	//if (data) {
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+	glEnable(GL_TEXTURE_2D);
+	/*}
+	else {
+		std::cout << "Failed to load texture" << std::endl;
+	}*/
+	stbi_image_free(data);
+	material_earth();
+	glRotatef(90, 1, 0, 0);
+	glRotatef(180, 0, 1, 0);
+	glRotatef(cit, 0, 1, 0);
+	node p[4];
+	double fenshu = 60;
+	glColor3f(1, 1, 1);
+	for (double i = 0; i <=pi * 2; i += pi / fenshu)
+	{
+		//glBegin(GL_QUAD_STRIP);
+		double st = 0;
+		int jishu1 = 0;
+		for (double j = 0; j <= pi+2*pi/fenshu; j += pi / fenshu)
+		{
+			//glColor3f(i/pi/2, j/pi, 0);
+			//glNormal3f()
+			if (jishu1 % 2 == 0)
+			{
+				double x = r * sin(i) * cos(j);
+				double y = r * sin(i) * sin(j);
+				double z = r * cos(i);
+				double x1, y1, z1;
+				x1 = r * sin(i + pi / fenshu) * cos(j);
+				y1 = r * sin(i + pi / fenshu) * sin(j);
+				z1 = r * cos(i + pi / fenshu);
+				p[0] = node(x, y, z);
+				p[1] = node(x1, y1, z1);
+			}
+			else
+			{
+				double x = r * sin(i) * cos(j);
+				double y = r * sin(i) * sin(j);
+				double z = r * cos(i);
+				double x1, y1, z1;
+				x1 = r * sin(i + pi / fenshu) * cos(j);
+				y1 = r * sin(i + pi / fenshu) * sin(j);
+				z1 = r * cos(i + pi / fenshu);
+				p[2] = node(x1, y1, z1);
+				p[3] = node(x, y, z);
+			}
+			if (jishu1 >= 1)
+			{
+				double xx = 0;
+				double yy = 0;
+				double zz = 0;
+				for (int k = 0; k < 4; k++)
+				{
+					xx += p[k].x;
+					yy += p[k].y;
+					zz += p[k].z;
+				}
+				xx = xx / 4;
+				yy = yy / 4;
+				zz = zz / 4;
+
+				glBegin(GL_POLYGON);
+				glNormal3f(xx, yy, zz);
+				//printf("111\n");
+				for (int k = 0; k < 4; k++)
+				{
+					//glColor3f(0, 1, 0);
+					glTexCoord3f(p[k].x, p[k].y, p[k].z);
+					glVertex3f(p[k].x, p[k].y, p[k].z);
+					//printf("%f %f %f \n", p[k].x, p[k].y, p[k].z);
+				}
+				glEnd();
+			}
+			jishu1++;
+		}
+	}
+	glPopMatrix();
+	//glutSwapBuffers();
+}
+void drawsun1(double x0,double y0,double z0,double r)
+{
+	glPushMatrix();
+	materials(&whiteShinyMaterials);
+	//glEnable(GL_TEXTURE_2D);
+	glLightfv(GL_LIGHT0,GL_AMBIENT, colorgreenLighting.ambient);
+	glLightfv(GL_LIGHT0,GL_DIFFUSE, colorgreenLighting.diffuse);
+	glLightfv(GL_LIGHT0,GL_SPECULAR, colorgreenLighting.specular);
+	GLfloat ppp[3]={0,0,0};
+	glRotatef(cit, 0, 0, 1);
+	glTranslatef(x0, y0, z0);
+	glRotatef(cit, 1, 0, 1);
+	glLightfv(GL_LIGHT0, GL_POSITION, ppp);
+	//glColor3f(1, 1, 1);
+	node p[4];
+	double fenshu = 60 ;
+	glColor3f(0, 1, 0);
+	for (double i = 0; i <=pi * 2; i += pi / fenshu)
+	{
+		//glBegin(GL_QUAD_STRIP);
+		double st = 0;
+		int jishu1 = 0;
+		for (double j = 0; j <= pi; j += pi / fenshu)
+		{
+			//glColor3f(i/pi/2, j/pi, 0);
+			//glNormal3f()
+			if (jishu1 % 2 == 0)
+			{
+				double x = r * sin(i) * cos(j);
+				double y = r * sin(i) * sin(j);
+				double z = r * cos(i);
+				double x1, y1, z1;
+				x1 = r * sin(i + pi / fenshu) * cos(j);
+				y1 = r * sin(i + pi / fenshu) * sin(j);
+				z1 = r * cos(i + pi / fenshu);
+				p[0] = node(x, y, z);
+				p[1] = node(x1, y1, z1);
+			}
+			else
+			{
+				double x = r * sin(i) * cos(j);
+				double y = r * sin(i) * sin(j);
+				double z = r * cos(i);
+				double x1, y1, z1;
+				x1 = r * sin(i + pi / fenshu) * cos(j);
+				y1 = r * sin(i + pi / fenshu) * sin(j);
+				z1 = r * cos(i + pi / fenshu);
+				p[2] = node(x1, y1, z1);
+				p[3] = node(x, y, z);
+			}
+			if (jishu1 >= 1)
+			{
+				double xx = 0;
+				double yy = 0;
+				double zz = 0;
+				for (int k = 0; k < 4; k++)
+				{
+					xx += p[k].x;
+					yy += p[k].y;
+					zz += p[k].z;
+				}
+				xx = xx / 4;
+				yy = yy / 4;
+				zz = zz / 4;
+
+				glBegin(GL_POLYGON);
+				glNormal3f(xx, yy, zz);
+				//printf("111\n");
+				for (int k = 0; k < 4; k++)
+				{
+					//glColor3f(0, 1, 0);
+					//glTexCoord3f(p[k].x, p[k].y, p[k].z);
+					glVertex3f(p[k].x, p[k].y, p[k].z);
+					//printf("%f %f %f \n", p[k].x, p[k].y, p[k].z);
+				}
+				glEnd();
+			}
+			jishu1++;
+		}
+	}
+	//glDisable(GL_TEXTURE_2D);
+	glPopMatrix();
+	//glutSwapBuffers();
+}
+void drawsun2(double x0, double y0, double z0, double r)
+{
+	glPushMatrix();
+	materials(&whiteShinyMaterials);
+	glLightfv(GL_LIGHT1,GL_AMBIENT, colorblueLighting.ambient);
+	glLightfv(GL_LIGHT1,GL_DIFFUSE, colorblueLighting.diffuse);
+	glLightfv(GL_LIGHT1,GL_SPECULAR, colorblueLighting.specular);
+	GLfloat ppp[3]={0,0,0};
+	glRotatef(cit, 1, 1, 1);
+	glTranslatef(x0, y0, z0);
+	glLightfv(GL_LIGHT1,GL_POSITION,ppp);
+	glRotatef(cit,1,0,1);
+	node p[4];
+	double fenshu = 60 ;
+	glColor3f(0, 0, 1);
+	for (double i = 0; i <=pi * 2; i += pi / fenshu)
+	{
+		//glBegin(GL_QUAD_STRIP);
+		double st = 0;
+		int jishu1 = 0;
+		for (double j = 0; j <= pi; j += pi / fenshu)
+		{
+			//glColor3f(i/pi/2, j/pi, 0);
+			//glNormal3f()
+			if (jishu1 % 2 == 0)
+			{
+				double x = r * sin(i) * cos(j);
+				double y = r * sin(i) * sin(j);
+				double z = r * cos(i);
+				double x1, y1, z1;
+				x1 = r * sin(i + pi / fenshu) * cos(j);
+				y1 = r * sin(i + pi / fenshu) * sin(j);
+				z1 = r * cos(i + pi / fenshu);
+				p[0] = node(x, y, z);
+				p[1] = node(x1, y1, z1);
+			}
+			else
+			{
+				double x = r * sin(i) * cos(j);
+				double y = r * sin(i) * sin(j);
+				double z = r * cos(i);
+				double x1, y1, z1;
+				x1 = r * sin(i + pi / fenshu) * cos(j);
+				y1 = r * sin(i + pi / fenshu) * sin(j);
+				z1 = r * cos(i + pi / fenshu);
+				p[2] = node(x1, y1, z1);
+				p[3] = node(x, y, z);
+			}
+			if (jishu1 >= 1)
+			{
+				double xx = 0;
+				double yy = 0;
+				double zz = 0;
+				for (int k = 0; k < 4; k++)
+				{
+					xx += p[k].x;
+					yy += p[k].y;
+					zz += p[k].z;
+				}
+				xx = xx / 4;
+				yy = yy / 4;
+				zz = zz / 4;
+
+				glBegin(GL_POLYGON);
+				glNormal3f(xx, yy, zz);
+				//printf("111\n");
+				for (int k = 0; k < 4; k++)
+				{
+					//glColor3f(0, 1, 0);
+					glVertex3f(p[k].x, p[k].y, p[k].z);
+					//printf("%f %f %f \n", p[k].x, p[k].y, p[k].z);
+				}
+				glEnd();
+			}
+			jishu1++;
+		}
+	}
+	glPopMatrix();
+	//glutSwapBuffers();
+}
+void drawsun3(double x0, double y0, double z0, double r)
+{
+	glPushMatrix();
+	materials(&whiteShinyMaterials);
+	glLightfv(GL_LIGHT2,GL_AMBIENT,colorredLighting.ambient);
+	glLightfv(GL_LIGHT2,GL_DIFFUSE,colorredLighting.diffuse);
+	glLightfv(GL_LIGHT2,GL_SPECULAR,colorredLighting.specular);
+	GLfloat ppp[3]={0,0,0};
+	glRotatef(cit, 1, 0, 0);
+	glTranslatef(x0, y0, z0);
+	glLightfv(GL_LIGHT2,GL_POSITION,ppp);
+	glRotatef(cit,1,0,0);
+	//glTranslatef((GLfloat)year, 0, 1, 0);
+	//glRotatef((GLfloat)1, 0, 0, 1);//公转
+	//平移
+	//glRotatef((GLfloat)month, 0.0, 1.0, 0.0);//自转
+	//地球绕太阳的公转 设置//绘制地球
+	//glutSolidSphere(0.15, 20, 16);
+	node p[4];
+	double fenshu = 60 ;
+	glColor3f(1, 0, 0);
+	for (double i = 0; i <=pi * 2; i += pi / fenshu)
+	{
+		//glBegin(GL_QUAD_STRIP);
+		double st = 0;
+		int jishu1 = 0;
+		for (double j = 0; j <= pi; j += pi / fenshu)
+		{
+			//glColor3f(i/pi/2, j/pi, 0);
+			//glNormal3f()
+			if (jishu1 % 2 == 0)
+			{
+				double x = r * sin(i) * cos(j);
+				double y = r * sin(i) * sin(j);
+				double z = r * cos(i);
+				double x1, y1, z1;
+				x1 = r * sin(i + pi / fenshu) * cos(j);
+				y1 = r * sin(i + pi / fenshu) * sin(j);
+				z1 = r * cos(i + pi / fenshu);
+				p[0] = node(x, y, z);
+				p[1] = node(x1, y1, z1);
+			}
+			else
+			{
+				double x = r * sin(i) * cos(j);
+				double y = r * sin(i) * sin(j);
+				double z = r * cos(i);
+				double x1, y1, z1;
+				x1 = r * sin(i + pi / fenshu) * cos(j);
+				y1 = r * sin(i + pi / fenshu) * sin(j);
+				z1 = r * cos(i + pi / fenshu);
+				p[2] = node(x1, y1, z1);
+				p[3] = node(x, y, z);
+			}
+			if (jishu1 >= 1)
+			{
+				double xx = 0;
+				double yy = 0;
+				double zz = 0;
+				for (int k = 0; k < 4; k++)
+				{
+					xx += p[k].x;
+					yy += p[k].y;
+					zz += p[k].z;
+				}
+				xx = xx / 4;
+				yy = yy / 4;
+				zz = zz / 4;
+
+				glBegin(GL_POLYGON);
+				glNormal3f(xx, yy, zz);
+				//printf("111\n");
+				for (int k = 0; k < 4; k++)
+				{
+					//glColor3f(0, 1, 0);
+					glVertex3f(p[k].x, p[k].y, p[k].z);
+					//printf("%f %f %f \n", p[k].x, p[k].y, p[k].z);
+				}
+				glEnd();
+			}
+			jishu1++;
+		}
+	}
+	glPopMatrix();
+	//glutSwapBuffers();
+}
+
+void display(void)
+{
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	//Rotate();
+	//sun();
+	drawearth(0, 0, 0, 1);
+	drawsun1(2, 0, 0, 0.2);
+	drawsun2(0, 2, 0, 0.2);
+	drawsun3(0, 0, 2, 0.2);
+	//glutSwapBuffers();
+	glutSwapBuffers();
+}
+void myReshape(int w, int h)
+{
+	glViewport(0, 0, w, h);
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+	if (w <= h)
+		glOrtho(-3.0, 3.0, -3.0 * (GLfloat)h / (GLfloat)w, 3.0 * (GLfloat)h / (GLfloat)w, -3.0, 3.0);
+	else
+		glOrtho(-3.0 * (GLfloat)w / (GLfloat)h, 3.0 * (GLfloat)w / (GLfloat)h, -3.0, 3.0, -3.0, 3.0);
+	glMatrixMode(GL_MODELVIEW);
+}
+
+void init()
+{
+	glShadeModel(GL_SMOOTH);
+	glEnable(GL_LIGHTING);
+	glEnable(GL_LIGHT0);
+	glEnable(GL_LIGHT1);
+	glEnable(GL_LIGHT2);
+	glEnable(GL_COLOR_MATERIAL);
+	//glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+	glEnable(GL_DEPTH_TEST);
+	//glEnable(GL_COLOR_MATERIAL);//使用颜色材质
+	glClearDepth(1.0f);
+	glMatrixMode(GL_PROJECTION);
+	//glEnable(GL_AUTO_NORMAL);
+	//glEnable(GL_NORMALIZE);
+}
+int main(int argc, char** argv)
+{
+	glutInit(&argc, argv);
+	glutInitWindowSize(600, 600);
+	glutInitWindowPosition(0, 0);
+	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH);
+	glutCreateWindow("Illumination model created by cxl");
+	init();
+	glutDisplayFunc(display);   //调用显示回调函数
+	glutReshapeFunc(myReshape);   // 设置观察体范围
+	glutIdleFunc(spin);       // 闲置 回调函数
+	glutMainLoop();
+	return 0;
+}
